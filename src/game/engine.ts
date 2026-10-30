@@ -1,4 +1,4 @@
-import { CASES, type Case, type RoomId } from './cases'
+import { getCases, type Case, type RoomId } from './cases'
 import { ROOM, FACE, R, drawClinic, drawDesk, setCtx, shadow, W, H } from './draw'
 import { OWNERS, PETS, VET, type Animal, type Person } from './sprites'
 
@@ -172,7 +172,9 @@ export class GameEngine {
   private refillQueue() {
     while (this.queue.length < 3) {
       const n = this.ui.num + this.queue.length + 1
-      const pool = n % 4 === 0 ? CASES.filter((c) => c.raro) : CASES.filter((c) => !c.raro)
+      const all = getCases()
+      const raros = all.filter((c) => c.raro), comunes = all.filter((c) => !c.raro)
+      const pool = n % 4 === 0 && raros.length ? raros : comunes.length ? comunes : all
       const lastC = this.queue[this.queue.length - 1]?.c
       let c: Case
       do c = pick(pool)

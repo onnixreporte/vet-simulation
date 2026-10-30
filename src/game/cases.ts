@@ -18,7 +18,8 @@ export interface Case {
   raro?: boolean
 }
 
-// Por ahora los casos viven acá. Después se cargan desde la tabla `cases` de Supabase.
+// Casos de respaldo: se usan si Supabase no está configurado o no responde.
+// Los casos en vivo se cargan de la tabla `cases` (ver src/lib/content.ts).
 export const CASES: Case[] = [
   { n: 'Toby', pet: 'perroMarron', esp: 'Perro', edad: '4 años', raza: 'Mestizo', color: 'Marrón', gen: 'Macho',
     caso: 'Se cayó del sillón y no apoya la patita trasera. Llora si lo tocan.', dice: '¡Le duele la patita!',
@@ -51,3 +52,12 @@ export const CASES: Case[] = [
     caso: 'Viene a la vacuna anual. No entra en la sala de perros, pero tiene turno.', dice: '¿Dónde lo estaciono?',
     dx: ['Control: que espere', 'Cirugía', 'Baño de barro', 'Internación canina'], room: 'espera' },
 ]
+
+let active: Case[] = CASES
+
+/** Casos con los que se arma la fila de pacientes. */
+export const getCases = () => active
+
+export function setCases(list: Case[]) {
+  if (list.length) active = list
+}

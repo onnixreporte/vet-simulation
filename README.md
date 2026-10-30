@@ -6,12 +6,13 @@ Juego de guardia veterinaria para celular, de Petsys. Llegan pacientes con su du
 
 - React + Vite + TypeScript
 - Vercel para el deploy
-- Supabase para casos y ranking (pendiente; hoy los casos están en `src/game/cases.ts` y el ranking usa datos de ejemplo + `localStorage`)
+- Supabase para casos y ranking. Sin las variables de entorno el juego usa los casos de `src/game/cases.ts` y un ranking de ejemplo en `localStorage`
 
 ## Desarrollo
 
 ```bash
 npm install
+cp .env.example .env.local   # completar con los datos de Supabase (opcional)
 npm run dev      # servidor local
 npm run build    # chequeo de tipos + build de producción en dist/
 npm run lint
@@ -27,11 +28,23 @@ src/
     cases.ts     casos clínicos y salas
     engine.ts    lógica del juego: cola de pacientes, tiempo, puntos, arrastrar y soltar
   components/    pantallas: Menu, Register, Intro, Game, Ranking
-  lib/           tipos del jugador y guardado de puntajes
+  lib/
+    supabase.ts  cliente REST mínimo (sin supabase-js)
+    content.ts   carga los casos activos desde Supabase
+    scores.ts    guardar turno y leer ranking
+supabase/
+  migrations/    tablas `cases` y `scores`, funciones `submit_score` y `top_scores`, casos iniciales
 ```
 
-Para sumar un caso, agregalo a `CASES` en `src/game/cases.ts`. El primer diagnóstico de `dx` es el correcto y se mezclan al mostrarse.
+## Supabase
+
+Correr los archivos de `supabase/migrations/` en orden (SQL Editor o `supabase db push`).
+
+- `cases`: lectura pública de los casos con `activo = true`. Para sumar un caso, insertá una fila; el primer diagnóstico de `dx` es el correcto (se mezclan al mostrarse). Para sacarlo, `activo = false`. Cada 4.º paciente sale de los casos con `raro = true`.
+- `scores`: sin acceso directo. El juego guarda con `submit_score()` (valida datos, puntos múltiplos de 100 hasta 10000 y un guardado cada 30 s por jugador) y lee con `top_scores()` (mejor turno de cada jugador, identificado por su Instagram o, si no puso, por nombre + veterinaria).
+
+Los casos de `src/game/cases.ts` quedan como respaldo si Supabase no responde.
 
 ## Deploy en Vercel
 
-Vercel detecta Vite solo: build `npm run build`, salida `dist`.
+Vercel detecta Vite solo: build `npm run build`, salida `dist`. Cargar `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` en Settings > Environment Variables (Production y Preview) y volver a desplegar.

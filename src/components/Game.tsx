@@ -5,7 +5,7 @@ import { vetName, type Player } from '../lib/types'
 
 interface Props {
   player: Player
-  onSave: (pts: number) => void
+  onSave: (pts: number) => Promise<void>
 }
 
 /** Rinde "*texto*" como negrita. */
@@ -35,6 +35,17 @@ export function Game({ player, onSave }: Props) {
   const overlay = useRef<HTMLDivElement>(null)
   const engine = useRef<GameEngine | null>(null)
   const [ui, setUi] = useState<Ui | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const save = async () => {
+    if (saving || !ui) return
+    setSaving(true)
+    try {
+      await onSave(ui.pts)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   useEffect(() => {
     const e = new GameEngine(canvas.current!, overlay.current!, setUi)
@@ -162,7 +173,9 @@ export function Game({ player, onSave }: Props) {
             <p className="lead">
               Atendiste {ui.count} paciente{ui.count === 1 ? '' : 's'} en {vetName(player)}.
             </p>
-            <button className="btn" onClick={() => onSave(ui.pts)}>GUARDAR EN RANKING</button>
+            <button className="btn" disabled={saving} onClick={save}>
+              {saving ? 'GUARDANDO…' : 'GUARDAR EN RANKING'}
+            </button>
             <button className="btn light" onClick={() => engine.current?.start()}>JUGAR DE NUEVO</button>
           </div>
         </div>

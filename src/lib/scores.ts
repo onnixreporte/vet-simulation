@@ -1,6 +1,8 @@
 import type { PetKey } from '../game/sprites'
+import { hasSupabase, rpc, SupabaseError } from './supabase'
 
 export interface Score {
+  id?: number
   n: string
   ig: string
   v: string
@@ -11,7 +13,21 @@ export interface Score {
   me?: boolean
 }
 
-// Datos de ejemplo hasta conectar la tabla `scores` de Supabase.
+export interface SaveResult {
+  id?: number
+  puesto?: number
+  /** se guardó solo en este dispositivo */
+  local: boolean
+  error?: string
+}
+
+export interface Board {
+  rows: Score[]
+  /** true si viene de Supabase, false si son datos de ejemplo + locales */
+  live: boolean
+}
+
+// Se muestran cuando no hay Supabase configurado (desarrollo local) o no responde.
 const SAMPLE: Score[] = [
   { n: 'Dra. Sofía', ig: '@sofi.vet', v: 'Veterinaria Patitas', p: 2450, o: 5, pet: 'gatoCrema' },
   { n: 'Marcos', ig: '@marcos_vet', v: 'Clínica Huellitas', p: 2100, o: 1, pet: 'perroNegro' },
@@ -30,14 +46,54 @@ function readLocal(): Score[] {
   }
 }
 
-export async function saveScore(s: Score): Promise<void> {
+function saveLocal(s: Score) {
   try {
-    localStorage.setItem(KEY, JSON.stringify([...readLocal(), s].slice(-10)))
+    localStorage.setItem(KEY, JSON.stringify([...readLocal(), { ...s, me: true }].slice(-10)))
   } catch {
     /* sin almacenamiento disponible */
   }
 }
 
-export async function topScores(limit = 10): Promise<Score[]> {
-  return [...SAMPLE, ...readLocal()].sort((a, b) => b.p - a.p).slice(0, limit)
+interface RankRow {
+  id: number
+  nombre: string
+  ig: string
+  vet: string
+  puntos: number
+  owner_idx: number
+  pet: PetKey
+}
+
+export async function saveScore(s: Score): Promise<SaveResult> {
+  if (!hasSupabase) {
+    saveLocal(s)
+    return { local: true }
+  }
+  try {
+    const [r] = await rpc<{ id: number; puesto: number }[]>('submit_score', {
+      p_nombre: s.n, p_ig: s.ig, p_vet: s.v, p_puntos: s.p, p_owner_idx: s.o, p_pet: s.pet,
+    })
+    return { id: r.id, puesto: r.puesto, local: false }
+  } catch (err) {
+    // El mensaje del cooldown viene armado desde la base (P0001); el resto es genérico.
+    const msg = err instanceof SupabaseError && err.status === 400 && err.message.startsWith('Esperá')
+      ? err.message
+      : 'No se pudo guardar en el ranking. Revisá tu conexión.'
+    return { local: true, error: msg }
+  }
+}
+
+export async function topScores(limit = 10): Promise<Board> {
+  if (hasSupabase) {
+    try {
+      const rows = await rpc<RankRow[]>('top_scores', { lim: limit })
+      return {
+        live: true,
+        rows: rows.map((r) => ({ id: r.id, n: r.nombre, ig: r.ig, v: r.vet, p: r.puntos, o: r.owner_idx, pet: r.pet })),
+      }
+    } catch (err) {
+      console.warn('No se pudo leer el ranking de Supabase.', err)
+    }
+  }
+  return { live: false, rows: [...SAMPLE, ...readLocal()].sort((a, b) => b.p - a.p).slice(0, limit) }
 }
