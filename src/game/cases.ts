@@ -49,7 +49,7 @@ export const CASES: Case[] = [
     caso: 'Se tragó la pelota del vecino. Y un poco del vecino.', dice: 'Lo encontré así en el patio...',
     dx: ['Cuerpo extraño: operar', 'Baño', 'Gases jurásicos', 'Control de rutina'], room: 'quirofano' },
   { n: 'Pancho', pet: 'elefante', esp: 'Elefante', edad: '23 años', raza: 'Africano', color: 'Gris', gen: 'Macho', raro: true,
-    caso: 'Viene a la vacuna anual. No entra en la sala de perros, pero tiene turno.', dice: '¿Dónde lo estaciono?',
+    caso: 'Viene a la vacuna anual. No entra en la sala de mascotas, pero tiene turno.', dice: '¿Dónde lo estaciono?',
     dx: ['Control: que espere', 'Cirugía', 'Baño de barro', 'Internación canina'], room: 'espera' },
 ]
 

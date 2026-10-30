@@ -10,7 +10,7 @@ export function Intro({ player, onDone }: { player: Player; onDone: () => void }
     () => [
       `Uff... primer día. Al fin abrimos en ${vetName(player)}. ¿Qué nos depara hoy?`,
       'Cada paciente llega con su dueño. Hay que leer la ficha rápido: especie, edad y el caso clínico.',
-      'Elegí qué tiene y arrastralo a su sala: baños, quirófano, sala de perros o sala de espera.',
+      'Elegí qué tiene y arrastralo a su sala: baños, quirófano, sala de mascotas o sala de espera.',
       'Si acertás, sumás puntos. Si te equivocás, perdés tiempo. Si el reloj llega a cero, cerramos por hoy.',
       `Ah... y dicen que a veces aparecen pacientes MUY raros. ¡Suerte, ${playerName(player)}!`,
     ],

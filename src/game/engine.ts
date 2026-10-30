@@ -1,8 +1,11 @@
+import { music, sfx } from './audio'
 import { getCases, type Case, type RoomId } from './cases'
 import { ROOM, FACE, R, drawClinic, drawDesk, setCtx, shadow, W, H } from './draw'
 import { OWNERS, PETS, VET, type Animal, type Person } from './sprites'
 
 export const TOTAL_TIME = 90
+/** Al final del turno los pacientes se mueven a esta velocidad respecto del inicio. */
+const MAX_PACE = 1.9
 
 export type Phase = 'idle' | 'arriving' | 'triage' | 'diag' | 'send' | 'moving' | 'over'
 export type SheetState = 'closed' | 'open' | 'mini'
@@ -53,7 +56,7 @@ interface Ent {
 
 const ROOMS: Record<RoomId, { label: string; path: number[][]; area: number[] }> = {
   banos: { label: 'Baños', path: [[48, 120], [48, 84], [48, 64]], area: [8, 46, 80, 26] },
-  perros: { label: 'Sala de perros', path: [[144, 120], [144, 84], [144, 64]], area: [104, 40, 70, 28] },
+  perros: { label: 'Sala de mascotas', path: [[144, 120], [144, 84], [144, 64]], area: [104, 40, 70, 28] },
   quirofano: { label: 'Quirófano', path: [[48, 150], [48, 176], [48, 200]], area: [30, 190, 30, 10] },
   espera: { label: 'Sala de espera', path: [[144, 150], [144, 178], [140, 222]], area: [128, 214, 40, 26] },
 }
@@ -79,10 +82,12 @@ export class GameEngine {
   private hover: RoomId | null = null
   private drag: { id: number; dx: number; dy: number } | null = null
   private dxOk: boolean[] = []
+  private deck: Record<'comunes' | 'raros', Case[]> = { comunes: [], raros: [] }
   private raf = 0
   private last = 0
   private lastEmit = 0
   private timers: number[] = []
+  private lastTick = 0
   ui: Ui
 
   private canvas: HTMLCanvasElement
@@ -114,6 +119,11 @@ export class GameEngine {
   private later(fn: () => void, ms: number) {
     this.timers.push(window.setTimeout(fn, ms))
   }
+  /** Ritmo del turno: 1 al empezar, MAX_PACE al terminar. Las penalizaciones de tiempo lo adelantan. */
+  private pace() {
+    const done = 1 - Math.max(0, this.ui.time) / TOTAL_TIME
+    return 1 + (MAX_PACE - 1) * done
+  }
 
   start() {
     this.stopLoop()
@@ -126,12 +136,16 @@ export class GameEngine {
     this.drag = null
     this.overlay.querySelectorAll('.bubble,.pop').forEach((n) => n.remove())
     this.set(this.freshUi())
+    this.lastTick = 0
     this.nextPatient()
     this.last = performance.now()
     this.raf = requestAnimationFrame(this.frame)
+    music.setPace(1)
+    music.start()
   }
 
   destroy() {
+    music.stop()
     this.stopLoop()
     this.timers.forEach(clearTimeout)
     this.canvas.removeEventListener('pointerdown', this.onDown)
@@ -145,7 +159,10 @@ export class GameEngine {
 
   /* ---------- acciones desde la ficha ---------- */
   choose(i: number) {
-    if (this.ui.phase === 'triage') return i === 0 ? this.askDx() : this.sendToWait()
+    if (this.ui.phase === 'triage') {
+      sfx.blip()
+      return i === 0 ? this.askDx() : this.sendToWait()
+    }
     if (this.ui.phase !== 'diag' || !this.cur) return
     const ok = this.dxOk[i]
     const c = this.cur.c
@@ -169,36 +186,51 @@ export class GameEngine {
     e.speed = speed
   }
 
+  /**
+   * Saca el próximo caso de un mazo mezclado: no se repite ninguno hasta agotar el mazo
+   * y nunca sale uno que ya está en pantalla. El mazo sigue entre turnos.
+   */
+  private draw(raro: boolean): Case {
+    const all = getCases()
+    const raros = all.filter((c) => c.raro), comunes = all.filter((c) => !c.raro)
+    const key = raro && raros.length ? 'raros' : 'comunes'
+    const src = key === 'raros' ? raros : comunes.length ? comunes : all
+    const busy = new Set([this.cur?.c, ...this.queue.map((e) => e.c)])
+    // si los casos se recargaron, descarta los que ya no existen
+    let deck = this.deck[key].filter((c) => src.includes(c))
+    if (!deck.some((c) => !busy.has(c))) deck = shuffle(src)
+    const i = Math.max(0, deck.findIndex((c) => !busy.has(c)))
+    const [c] = deck.splice(i, 1)
+    this.deck[key] = deck
+    return c
+  }
+
   private refillQueue() {
-    while (this.queue.length < 3) {
+    while (this.queue.length < BENCH.length) {
       const n = this.ui.num + this.queue.length + 1
-      const all = getCases()
-      const raros = all.filter((c) => c.raro), comunes = all.filter((c) => !c.raro)
-      const pool = n % 4 === 0 && raros.length ? raros : comunes.length ? comunes : all
-      const lastC = this.queue[this.queue.length - 1]?.c
-      let c: Case
-      do c = pick(pool)
-      while (lastC && c === lastC && pool.length > 1)
-      const e = this.newEnt(c)
+      const e = this.newEnt(this.draw(n % 4 === 0))
       this.queue.push(e)
       this.ents.push(e)
     }
     this.queue.forEach((e, i) => {
       if (!e.path.length || e.queueSpot !== i) {
         e.queueSpot = i
-        this.moveTo(e, [BENCH[i]])
+        // un paciente que vuelve de "que espere" puede dejar la fila con uno de más
+        this.moveTo(e, [BENCH[Math.min(i, BENCH.length - 1)]])
       }
     })
   }
 
   private nextPatient() {
     if (this.ui.phase === 'over') return
-    this.refillQueue()
+    if (!this.queue.length) this.refillQueue()
     const e = this.queue.shift()!
     this.cur = e
     this.set({ num: this.ui.num + 1, phase: 'arriving', sheet: 'closed', hint: 'Llega un paciente...' })
     this.moveTo(e, [[144, 186], [144, 160], [118, 140], COUNTER], () => {
       if (this.ui.phase === 'over') return
+      if (e.c.raro) sfx.sparkle()
+      else sfx.ding()
       this.say(e.c.dice, e)
       this.set({ ficha: { c: e.c, owner: e.owner } })
       this.askAttend()
@@ -254,7 +286,7 @@ export class GameEngine {
         const [ax, ay, aw, ah] = R0.area
         this.moveTo(e, [...R0.path.slice(0, -1), [ax + Math.random() * aw, ay + Math.random() * ah]], done, 70)
       }
-      this.later(() => this.nextPatient(), 700)
+      this.later(() => this.nextPatient(), 700 / this.pace())
     } else {
       this.penalty(10, at)
       this.set({ hint: `${c.n} no va a ${R0.label}. *Probá otra sala.*` })
@@ -273,7 +305,10 @@ export class GameEngine {
     this.canvas.classList.remove('can-grab')
     this.say('')
     const p = this.ui.pts
-    this.set({ phase: 'over', sheet: 'closed', stars: p >= 1200 ? 3 : p >= 500 ? 2 : p > 0 ? 1 : 0 })
+    const stars = p >= 1200 ? 3 : p >= 500 ? 2 : p > 0 ? 1 : 0
+    this.set({ phase: 'over', sheet: 'closed', stars })
+    music.stop()
+    sfx.end(stars)
   }
 
   /* ---------- feedback ---------- */
@@ -307,10 +342,12 @@ export class GameEngine {
     } catch {
       /* algunos navegadores no lo permiten */
     }
+    sfx.bad()
     this.pop(`-${sec}s`, at, 'bad')
     this.set({ time: Math.max(0, this.ui.time - sec), hit: this.ui.hit + 1 })
   }
   private award(n: number, at: number[]) {
+    sfx.coin(n >= 100)
     this.pop(`+${n}`, at, 'good')
     this.set({ pts: this.ui.pts + n, ptsBump: this.ui.ptsBump + 1 })
   }
@@ -334,6 +371,7 @@ export class GameEngine {
       ev.preventDefault()
       this.canvas.setPointerCapture(ev.pointerId)
       this.drag = { id: ev.pointerId, dx: e.x - x, dy: e.y - y }
+      sfx.pop()
       e.path = []
       e.lift = true
     } else {
@@ -370,6 +408,12 @@ export class GameEngine {
       if (now - this.lastEmit > 100) {
         this.lastEmit = now
         this.set({ time })
+        music.setPace(1 + (this.pace() - 1) * 0.5)
+      }
+      const secs = Math.ceil(time)
+      if (secs <= 10 && secs > 0 && secs !== this.lastTick) {
+        this.lastTick = secs
+        sfx.tick(secs <= 3)
       }
       if (time <= 0) this.endGame()
     }
@@ -379,10 +423,15 @@ export class GameEngine {
   }
 
   private update(dt: number) {
+    const pace = this.pace()
     for (const e of this.ents) {
       e.moving = false
       if (e.path.length && !(this.drag && e === this.cur)) {
-        const [tx, ty] = e.path[0], dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy), step = e.speed * dt
+        if (!e.path[0]) {
+          e.path.shift()
+          continue
+        }
+        const [tx, ty] = e.path[0], dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy), step = e.speed * pace * dt
         if (Math.abs(dx) > 0.5) e.flip = dx < 0
         if (d <= step) {
           e.x = tx

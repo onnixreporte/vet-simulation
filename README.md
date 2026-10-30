@@ -27,6 +27,7 @@ src/
     draw.ts      dibujo de la clínica y la fachada sobre canvas (192x256 px lógicos)
     cases.ts     casos clínicos y salas
     engine.ts    lógica del juego: cola de pacientes, tiempo, puntos, arrastrar y soltar
+    audio.ts     música y efectos chiptune sintetizados con Web Audio (sin archivos)
   components/    pantallas: Menu, Register, Intro, Game, Ranking
   lib/
     supabase.ts  cliente REST mínimo (sin supabase-js)
@@ -38,10 +39,10 @@ supabase/
 
 ## Supabase
 
-Correr los archivos de `supabase/migrations/` en orden (SQL Editor o `supabase db push`).
+Proyecto: vetsafe. Las migraciones de `supabase/migrations/` ya están aplicadas ahí; para un proyecto nuevo, correrlas en orden (SQL Editor o `supabase db push`).
 
-- `cases`: lectura pública de los casos con `activo = true`. Para sumar un caso, insertá una fila; el primer diagnóstico de `dx` es el correcto (se mezclan al mostrarse). Para sacarlo, `activo = false`. Cada 4.º paciente sale de los casos con `raro = true`.
-- `scores`: sin acceso directo. El juego guarda con `submit_score()` (valida datos, puntos múltiplos de 100 hasta 10000 y un guardado cada 30 s por jugador) y lee con `top_scores()` (mejor turno de cada jugador, identificado por su Instagram o, si no puso, por nombre + veterinaria).
+- `cases`: lectura pública de los casos con `active = true`. Para sumar un caso, insertá una fila desde el panel; el primer elemento de `diagnoses` es el correcto (se mezclan al mostrarse). Para sacarlo, `active = false`. Cada cuarto paciente sale de los casos con `rare = true`. `pet` tiene que ser uno de los sprites de `src/game/sprites.ts`.
+- `scores`: sin acceso directo. El juego guarda con `submit_score()` (valida datos, puntos múltiplos de 100 y no más de 300 por paciente atendido, y un guardado cada 30 s por jugador) y lee con `top_scores()` (mejor turno de cada jugador, identificado por su Instagram o, si no puso, por nombre + veterinaria).
 
 Los casos de `src/game/cases.ts` quedan como respaldo si Supabase no responde.
 

@@ -1,11 +1,12 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
+import { isMuted, setMuted } from '../game/audio'
 import { GameEngine, TOTAL_TIME, type Ui } from '../game/engine'
 import { ICONS, PETS, toUrl } from '../game/sprites'
 import { vetName, type Player } from '../lib/types'
 
 interface Props {
   player: Player
-  onSave: (pts: number) => Promise<void>
+  onSave: (pts: number, patients: number) => Promise<void>
 }
 
 /** Rinde "*texto*" como negrita. */
@@ -36,12 +37,18 @@ export function Game({ player, onSave }: Props) {
   const engine = useRef<GameEngine | null>(null)
   const [ui, setUi] = useState<Ui | null>(null)
   const [saving, setSaving] = useState(false)
+  const [mute, setMute] = useState(isMuted)
+
+  const toggleMute = () => {
+    setMuted(!mute)
+    setMute(!mute)
+  }
 
   const save = async () => {
     if (saving || !ui) return
     setSaving(true)
     try {
-      await onSave(ui.pts)
+      await onSave(ui.pts, ui.count)
     } finally {
       setSaving(false)
     }
@@ -69,7 +76,12 @@ export function Game({ player, onSave }: Props) {
       <div className="hud">
         <div className="vetname">
           <b>{vetName(player)}</b>
-          <span>DÍA 1</span>
+          <span className="hud-right">
+            DÍA 1
+            <button type="button" className="mute" onClick={toggleMute} aria-label={mute ? 'Activar sonido' : 'Silenciar'} aria-pressed={mute}>
+              <img className="px" src={mute ? ICONS.mute : ICONS.sound} alt="" />
+            </button>
+          </span>
         </div>
         <div className="timer">
           <img className="px" src={ICONS.clock} alt="" />
@@ -94,7 +106,7 @@ export function Game({ player, onSave }: Props) {
         <canvas ref={canvas} id="stage" className="px" width={192} height={256} />
         <div className="overlay-layer" ref={overlay}>
           <div className="rlabel" style={{ left: '4%', top: '7%' }}>BAÑOS</div>
-          <div className="rlabel" style={{ right: '4%', top: '7%' }}>SALA DE PERROS</div>
+          <div className="rlabel" style={{ right: '4%', top: '7%' }}>SALA DE MASCOTAS</div>
           <div className="rlabel" style={{ left: '4%', top: '71.5%' }}>QUIRÓFANO</div>
           <div className="rlabel" style={{ right: '4%', top: '71.5%' }}>SALA DE ESPERA</div>
         </div>
