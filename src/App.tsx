@@ -6,7 +6,7 @@ import { Ranking } from './components/Ranking'
 import { Register } from './components/Register'
 import { loadCases } from './lib/content'
 import { saveScore, type SaveResult } from './lib/scores'
-import { vetName, type Player, type Screen } from './lib/types'
+import { playerName, vetName, type Player, type Screen } from './lib/types'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('menu')
@@ -22,8 +22,8 @@ export default function App() {
     window.scrollTo({ top: 0 })
   }
 
-  const save = async (pts: number) => {
-    const r = await saveScore({ n: player.nombre || 'Vos', ig: player.ig, v: vetName(player), p: pts, o: 2, pet: 'perroMarron' })
+  const save = async (pts: number, patients: number) => {
+    const r = await saveScore({ n: playerName(player), ig: player.ig, v: vetName(player), p: pts, c: patients, o: 2, pet: 'perroMarron' })
     setMine({ ...r, pts })
     go('ranking')
   }

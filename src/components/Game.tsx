@@ -5,7 +5,7 @@ import { vetName, type Player } from '../lib/types'
 
 interface Props {
   player: Player
-  onSave: (pts: number) => Promise<void>
+  onSave: (pts: number, patients: number) => Promise<void>
 }
 
 /** Rinde "*texto*" como negrita. */
@@ -41,7 +41,7 @@ export function Game({ player, onSave }: Props) {
     if (saving || !ui) return
     setSaving(true)
     try {
-      await onSave(ui.pts)
+      await onSave(ui.pts, ui.count)
     } finally {
       setSaving(false)
     }

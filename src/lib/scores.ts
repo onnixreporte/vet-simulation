@@ -2,11 +2,13 @@ import type { PetKey } from '../game/sprites'
 import { hasSupabase, rpc, SupabaseError } from './supabase'
 
 export interface Score {
-  id?: number
+  id?: string
   n: string
   ig: string
   v: string
   p: number
+  /** pacientes atendidos en el turno */
+  c?: number
   /** índice del dueño y mascota que se muestran en el podio */
   o: number
   pet: PetKey
@@ -14,7 +16,7 @@ export interface Score {
 }
 
 export interface SaveResult {
-  id?: number
+  id?: string
   puesto?: number
   /** se guardó solo en este dispositivo */
   local: boolean
@@ -55,11 +57,11 @@ function saveLocal(s: Score) {
 }
 
 interface RankRow {
-  id: number
-  nombre: string
-  ig: string
-  vet: string
-  puntos: number
+  id: string
+  player_name: string
+  instagram: string | null
+  vet_name: string
+  points: number
   owner_idx: number
   pet: PetKey
 }
@@ -70,13 +72,14 @@ export async function saveScore(s: Score): Promise<SaveResult> {
     return { local: true }
   }
   try {
-    const [r] = await rpc<{ id: number; puesto: number }[]>('submit_score', {
-      p_nombre: s.n, p_ig: s.ig, p_vet: s.v, p_puntos: s.p, p_owner_idx: s.o, p_pet: s.pet,
+    const [r] = await rpc<{ id: string; rank: number }[]>('submit_score', {
+      p_player_name: s.n, p_instagram: s.ig, p_vet_name: s.v, p_points: s.p, p_patients: s.c ?? 0,
+      p_owner_idx: s.o, p_pet: s.pet,
     })
-    return { id: r.id, puesto: r.puesto, local: false }
+    return { id: r.id, puesto: r.rank, local: false }
   } catch (err) {
     // El mensaje del cooldown viene armado desde la base (P0001); el resto es genérico.
-    const msg = err instanceof SupabaseError && err.status === 400 && err.message.startsWith('Esperá')
+    const msg = err instanceof SupabaseError && err.status === 400 && /^(Esperá|Puntaje)/.test(err.message)
       ? err.message
       : 'No se pudo guardar en el ranking. Revisá tu conexión.'
     return { local: true, error: msg }
@@ -89,7 +92,9 @@ export async function topScores(limit = 10): Promise<Board> {
       const rows = await rpc<RankRow[]>('top_scores', { lim: limit })
       return {
         live: true,
-        rows: rows.map((r) => ({ id: r.id, n: r.nombre, ig: r.ig, v: r.vet, p: r.puntos, o: r.owner_idx, pet: r.pet })),
+        rows: rows.map((r) => ({
+          id: r.id, n: r.player_name, ig: r.instagram ?? '', v: r.vet_name, p: r.points, o: r.owner_idx, pet: r.pet,
+        })),
       }
     } catch (err) {
       console.warn('No se pudo leer el ranking de Supabase.', err)
