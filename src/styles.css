@@ -222,6 +222,9 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .rlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .rlist li { display: grid; grid-template-columns: 2.4em minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; background: #fffdf6; box-shadow: -2px 0 0 var(--ink), 2px 0 0 var(--ink), 0 -2px 0 var(--ink), 0 2px 0 var(--ink); margin: 2px; }
 .rlist li.me { background: #fff1b8; }
+.rank-card .lead { margin: 6px 0 10px; color: #6c5b66; font-size: 15px; }
+.rank-card .rank-note { color: #a8461f; font-weight: 700; }
+.pod.me .nm { background: #fff1b8; }
 .rlist .n { font-family: var(--display); font-size: 10px; }
 .rlist .w { min-width: 0; }
 .rlist .w b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
