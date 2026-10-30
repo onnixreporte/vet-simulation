@@ -49,16 +49,23 @@ interface Ent {
   blinkAt: number
   onArrive: (() => void) | null
   room: RoomId | null
+  /** lugar fijo dentro de la sala (sólo en salas con `slots`) */
+  slot?: number
   settled?: boolean
   lift?: boolean
   queueSpot?: number
 }
 
-const ROOMS: Record<RoomId, { label: string; path: number[][]; area: number[] }> = {
+/**
+ * `area`: zona donde se queda al azar el paciente atendido (máximo 3 por sala).
+ * `slots`: lugares fijos, uno por paciente, para salas que comparten espacio con la fila.
+ */
+const ROOMS: Record<RoomId, { label: string; path: number[][]; area?: number[]; slots?: number[][] }> = {
   banos: { label: 'Baños', path: [[48, 120], [48, 84], [48, 64]], area: [8, 46, 80, 26] },
   perros: { label: 'Sala de mascotas', path: [[144, 120], [144, 84], [144, 64]], area: [104, 40, 70, 28] },
   quirofano: { label: 'Quirófano', path: [[48, 150], [48, 176], [48, 200]], area: [30, 190, 30, 10] },
-  espera: { label: 'Sala de espera', path: [[144, 150], [144, 178], [140, 222]], area: [128, 214, 40, 26] },
+  // la fila usa el sillón y la puerta (BENCH); los atendidos esperan abajo a la izquierda sin pisarla
+  espera: { label: 'Sala de espera', path: [[144, 150], [144, 178], [140, 222]], slots: [[114, 247], [146, 247]] },
 }
 const COUNTER = [96, 136]
 const BENCH = [[132, 210], [158, 210], [178, 244]]
@@ -83,6 +90,7 @@ export class GameEngine {
   private drag: { id: number; dx: number; dy: number } | null = null
   private dxOk: boolean[] = []
   private deck: Record<'comunes' | 'raros', Case[]> = { comunes: [], raros: [] }
+  private nextSlot: Record<RoomId, number> = { banos: 0, perros: 0, quirofano: 0, espera: 0 }
   private raf = 0
   private last = 0
   private lastEmit = 0
@@ -134,6 +142,7 @@ export class GameEngine {
     this.cur = null
     this.hover = null
     this.drag = null
+    this.nextSlot = { banos: 0, perros: 0, quirofano: 0, espera: 0 }
     this.overlay.querySelectorAll('.bubble,.pop').forEach((n) => n.remove())
     this.set(this.freshUi())
     this.lastTick = 0
@@ -215,8 +224,9 @@ export class GameEngine {
     this.queue.forEach((e, i) => {
       if (!e.path.length || e.queueSpot !== i) {
         e.queueSpot = i
-        // un paciente que vuelve de "que espere" puede dejar la fila con uno de más
-        this.moveTo(e, [BENCH[Math.min(i, BENCH.length - 1)]])
+        // si todavía está en recepción (vuelve de "que espere"), entra por la puerta y no atraviesa la pared
+        const door = e.y < 174 ? [[144, 160], [144, 186]] : []
+        this.moveTo(e, [...door, BENCH[Math.min(i, BENCH.length - 1)]])
       }
     })
   }
@@ -247,12 +257,15 @@ export class GameEngine {
   private sendToWait() {
     const e = this.cur!
     this.say('')
-    this.set({ phase: 'moving', sheet: 'closed' })
-    this.moveTo(e, [[118, 140], [144, 160], [144, 186], [178, 244]], () => {
-      this.queue.push(e)
-      this.set({ num: this.ui.num - 1 })
-      this.nextPatient()
-    }, 60)
+    // Vuelve a la fila ya mismo: pasa el siguiente y este camina al lugar del banco que le toca.
+    // Antes volvía a un punto fijo que estaba ocupado por otro paciente de la fila.
+    this.queue.push(e)
+    this.set({ num: this.ui.num - 1 })
+    this.nextPatient()
+    const spot = this.queue.indexOf(e)
+    if (spot < 0) return // la fila estaba vacía y volvió a pasar él mismo
+    e.queueSpot = spot
+    this.moveTo(e, [[118, 140], [144, 160], [144, 186], BENCH[Math.min(spot, BENCH.length - 1)]], null, 60)
   }
   private askDx() {
     const c = this.cur!.c
@@ -278,12 +291,16 @@ export class GameEngine {
       this.award(c.raro ? 200 : 100, at)
       e.room = id
       const done = () => this.settle(id, e)
-      if (dropped) {
+      if (R0.slots) {
+        e.slot = this.nextSlot[id]++ % R0.slots.length
+        const spot = R0.slots[e.slot]
+        this.moveTo(e, dropped ? [spot] : [...R0.path.slice(0, -1), spot], done, 70)
+      } else if (dropped) {
         // soltado dentro de la sala: se queda donde lo dejaron
         const cl = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
         this.moveTo(e, [[cl(e.x, r.x + 16, r.x + r.w - 18), cl(e.y, r.y + FACE + 20, r.y + r.h - 3)]], done, 70)
       } else {
-        const [ax, ay, aw, ah] = R0.area
+        const [ax, ay, aw, ah] = R0.area!
         this.moveTo(e, [...R0.path.slice(0, -1), [ax + Math.random() * aw, ay + Math.random() * ah]], done, 70)
       }
       this.later(() => this.nextPatient(), 700 / this.pace())
@@ -298,7 +315,9 @@ export class GameEngine {
   private settle(id: RoomId, e: Ent) {
     const here = this.ents.filter((x) => x.room === id && x.settled)
     e.settled = true
-    if (here.length >= 3) this.ents = this.ents.filter((x) => x !== here[0])
+    // con lugares fijos se va el que ocupaba ese lugar; si no, el más viejo cuando ya hay 3
+    const out = e.slot !== undefined ? here.find((x) => x.slot === e.slot) : here.length >= 3 ? here[0] : undefined
+    if (out) this.ents = this.ents.filter((x) => x !== out)
   }
 
   private endGame() {

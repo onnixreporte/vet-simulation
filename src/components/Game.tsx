@@ -119,7 +119,7 @@ export function Game({ player, onSave }: Props) {
         </span>
       </div>
 
-      <div className="sheet" data-state={ui?.sheet ?? 'closed'}>
+      <div className="sheet" data-state={ui?.sheet ?? 'closed'} data-phase={ui?.phase}>
         <div className="pbox ficha">
           <div className="mini-bar">
             <span>Mandá a {f?.c.n} a su sala</span>

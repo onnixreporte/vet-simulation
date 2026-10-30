@@ -167,7 +167,8 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .ficha::before { content: ""; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 84px; height: 18px; background: #a7afc2;
   box-shadow: -4px 0 0 var(--ink), 4px 0 0 var(--ink), 0 -4px 0 var(--ink), 0 4px 0 var(--ink), inset 0 4px 0 #d4dae6, inset 0 -4px 0 #7e869b; }
 .mini-bar { display: none; align-items: center; justify-content: space-between; gap: 10px; margin: -8px 0 10px; }
-.sheet[data-state="mini"] .mini-bar { display: flex; }
+/* al mandar a sala la ficha se puede reabrir, así que el botón para ocultarla tiene que seguir visible */
+.sheet[data-state="mini"] .mini-bar, .sheet[data-state="open"][data-phase="send"] .mini-bar { display: flex; }
 .mini-bar span { font-size: 15px; font-weight: 700; color: #a8461f; }
 .mini-bar button { font-family: var(--display); font-size: 8px; background: var(--paper-2); border: 0; padding: 8px 10px; box-shadow: -2px 0 0 var(--ink), 2px 0 0 var(--ink), 0 -2px 0 var(--ink), 0 2px 0 var(--ink); }
 .fhead { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--display); font-size: 8px; color: #8a7a62; margin-bottom: 12px; }
