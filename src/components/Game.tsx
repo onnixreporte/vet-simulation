@@ -94,7 +94,7 @@ export function Game({ player, onSave }: Props) {
         <canvas ref={canvas} id="stage" className="px" width={192} height={256} />
         <div className="overlay-layer" ref={overlay}>
           <div className="rlabel" style={{ left: '4%', top: '7%' }}>BAÑOS</div>
-          <div className="rlabel" style={{ right: '4%', top: '7%' }}>SALA DE PERROS</div>
+          <div className="rlabel" style={{ right: '4%', top: '7%' }}>SALA DE MASCOTAS</div>
           <div className="rlabel" style={{ left: '4%', top: '71.5%' }}>QUIRÓFANO</div>
           <div className="rlabel" style={{ right: '4%', top: '71.5%' }}>SALA DE ESPERA</div>
         </div>

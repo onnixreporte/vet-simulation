@@ -125,7 +125,7 @@ export function drawClinic(t: number) {
   R(66, 58, 8, 8, INK); R(67, 59, 6, 6, '#9aa3b5'); R(68, 61, 4, 1, INK); R(68, 63, 4, 1, INK)
   R(44, 62, 10, 3, '#9bd3f2'); R(46, 61, 6, 1, '#9bd3f2')
 
-  /* SALA DE PERROS */
+  /* SALA DE MASCOTAS (internación y observación) */
   for (let k = 0; k < 3; k++) {
     const kx = P.x + 4 + k * 29, ky = P.y + 4
     R(kx, ky, 25, 24, INK); R(kx + 1, ky + 1, 23, 22, '#3a3150'); R(kx + 1, ky + 1, 23, 3, '#8c6bb0')

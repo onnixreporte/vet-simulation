@@ -53,7 +53,7 @@ interface Ent {
 
 const ROOMS: Record<RoomId, { label: string; path: number[][]; area: number[] }> = {
   banos: { label: 'Baños', path: [[48, 120], [48, 84], [48, 64]], area: [8, 46, 80, 26] },
-  perros: { label: 'Sala de perros', path: [[144, 120], [144, 84], [144, 64]], area: [104, 40, 70, 28] },
+  perros: { label: 'Sala de mascotas', path: [[144, 120], [144, 84], [144, 64]], area: [104, 40, 70, 28] },
   quirofano: { label: 'Quirófano', path: [[48, 150], [48, 176], [48, 200]], area: [30, 190, 30, 10] },
   espera: { label: 'Sala de espera', path: [[144, 150], [144, 178], [140, 222]], area: [128, 214, 40, 26] },
 }
@@ -79,6 +79,7 @@ export class GameEngine {
   private hover: RoomId | null = null
   private drag: { id: number; dx: number; dy: number } | null = null
   private dxOk: boolean[] = []
+  private deck: Record<'comunes' | 'raros', Case[]> = { comunes: [], raros: [] }
   private raf = 0
   private last = 0
   private lastEmit = 0
@@ -169,31 +170,44 @@ export class GameEngine {
     e.speed = speed
   }
 
+  /**
+   * Saca el próximo caso de un mazo mezclado: no se repite ninguno hasta agotar el mazo
+   * y nunca sale uno que ya está en pantalla. El mazo sigue entre turnos.
+   */
+  private draw(raro: boolean): Case {
+    const all = getCases()
+    const raros = all.filter((c) => c.raro), comunes = all.filter((c) => !c.raro)
+    const key = raro && raros.length ? 'raros' : 'comunes'
+    const src = key === 'raros' ? raros : comunes.length ? comunes : all
+    const busy = new Set([this.cur?.c, ...this.queue.map((e) => e.c)])
+    // si los casos se recargaron, descarta los que ya no existen
+    let deck = this.deck[key].filter((c) => src.includes(c))
+    if (!deck.some((c) => !busy.has(c))) deck = shuffle(src)
+    const i = Math.max(0, deck.findIndex((c) => !busy.has(c)))
+    const [c] = deck.splice(i, 1)
+    this.deck[key] = deck
+    return c
+  }
+
   private refillQueue() {
-    while (this.queue.length < 3) {
+    while (this.queue.length < BENCH.length) {
       const n = this.ui.num + this.queue.length + 1
-      const all = getCases()
-      const raros = all.filter((c) => c.raro), comunes = all.filter((c) => !c.raro)
-      const pool = n % 4 === 0 && raros.length ? raros : comunes.length ? comunes : all
-      const lastC = this.queue[this.queue.length - 1]?.c
-      let c: Case
-      do c = pick(pool)
-      while (lastC && c === lastC && pool.length > 1)
-      const e = this.newEnt(c)
+      const e = this.newEnt(this.draw(n % 4 === 0))
       this.queue.push(e)
       this.ents.push(e)
     }
     this.queue.forEach((e, i) => {
       if (!e.path.length || e.queueSpot !== i) {
         e.queueSpot = i
-        this.moveTo(e, [BENCH[i]])
+        // un paciente que vuelve de "que espere" puede dejar la fila con uno de más
+        this.moveTo(e, [BENCH[Math.min(i, BENCH.length - 1)]])
       }
     })
   }
 
   private nextPatient() {
     if (this.ui.phase === 'over') return
-    this.refillQueue()
+    if (!this.queue.length) this.refillQueue()
     const e = this.queue.shift()!
     this.cur = e
     this.set({ num: this.ui.num + 1, phase: 'arriving', sheet: 'closed', hint: 'Llega un paciente...' })
@@ -382,6 +396,10 @@ export class GameEngine {
     for (const e of this.ents) {
       e.moving = false
       if (e.path.length && !(this.drag && e === this.cur)) {
+        if (!e.path[0]) {
+          e.path.shift()
+          continue
+        }
         const [tx, ty] = e.path[0], dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy), step = e.speed * dt
         if (Math.abs(dx) > 0.5) e.flip = dx < 0
         if (d <= step) {

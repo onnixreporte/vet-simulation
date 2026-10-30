@@ -74,6 +74,6 @@ select * from (values
   ('Coca', 'perroSalchi', 'Perro', '11 años', 'Salchicha', 'Marrón', 'Hembra', 'Tose de noche. Hay que monitorearla unas horas con oxígeno.', 'Tose igual que mi abuelo.', array['Tos: observación', 'Baño', 'Corte de pelo', 'Fractura'], 'perros', false),
   ('Destello', 'unicornio', 'Unicornio', '312 años', 'Andino', 'Blanco arcoíris', 'Hembra', 'Su cuerno perdió el brillo y ya no hace magia. Tiene barro hasta en la crin.', '¡Es una emergencia mágica!', array['Baño con brillantina', 'Fractura de cuerno', 'Modo ahorro', 'Es un caballo disfrazado'], 'banos', true),
   ('Rex Jr.', 'dino', 'Dinosaurio', '65 millones de años', 'T-Rex', 'Verde', 'Macho', 'Se tragó la pelota del vecino. Y un poco del vecino.', 'Lo encontré así en el patio...', array['Cuerpo extraño: operar', 'Baño', 'Gases jurásicos', 'Control de rutina'], 'quirofano', true),
-  ('Pancho', 'elefante', 'Elefante', '23 años', 'Africano', 'Gris', 'Macho', 'Viene a la vacuna anual. No entra en la sala de perros, pero tiene turno.', '¿Dónde lo estaciono?', array['Control: que espere', 'Cirugía', 'Baño de barro', 'Internación canina'], 'espera', true)
+  ('Pancho', 'elefante', 'Elefante', '23 años', 'Africano', 'Gris', 'Macho', 'Viene a la vacuna anual. No entra en la sala de mascotas, pero tiene turno.', '¿Dónde lo estaciono?', array['Control: que espere', 'Cirugía', 'Baño de barro', 'Internación canina'], 'espera', true)
 ) v(name, pet, species, age, breed, color, gender, description, owner_says, diagnoses, room, rare)
 where not exists (select 1 from public.cases);
