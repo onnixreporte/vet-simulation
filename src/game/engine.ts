@@ -1,7 +1,7 @@
 import { music, sfx } from './audio'
 import { getCases, type Case, type RoomId } from './cases'
 import { ROOM, FACE, R, drawClinic, drawDesk, setCtx, shadow, W, H } from './draw'
-import { OWNERS, PETS, VET, type Animal, type Person } from './sprites'
+import { OWNERS, PETS, type Animal, type Person } from './sprites'
 
 export const TOTAL_TIME = 90
 /** Al final del turno los pacientes se mueven a esta velocidad respecto del inicio. */
@@ -101,11 +101,14 @@ export class GameEngine {
   private canvas: HTMLCanvasElement
   private overlay: HTMLElement
   private onUi: (ui: Ui) => void
+  /** el jugador, con bata, detrás del mostrador */
+  private vet: Person
 
-  constructor(canvas: HTMLCanvasElement, overlay: HTMLElement, onUi: (ui: Ui) => void) {
+  constructor(canvas: HTMLCanvasElement, overlay: HTMLElement, onUi: (ui: Ui) => void, vet: Person) {
     this.canvas = canvas
     this.overlay = overlay
     this.onUi = onUi
+    this.vet = vet
     this.ctx = canvas.getContext('2d')!
     this.ui = this.freshUi()
     canvas.addEventListener('pointerdown', this.onDown)
@@ -504,7 +507,7 @@ export class GameEngine {
       }
     }
     shadow(96, 104, 10)
-    ctx.drawImage((t + 0.7) % 3.4 < 0.12 ? VET.blink : VET.open, 90, 86)
+    ctx.drawImage((t + 0.7) % 3.4 < 0.12 ? this.vet.blink : this.vet.open, 90, 86)
     drawDesk()
     const cur = this.cur
     for (const e of [...this.ents].sort((a, b) => a.y - b.y)) if (e !== cur || !e.lift) this.drawEnt(e, t)

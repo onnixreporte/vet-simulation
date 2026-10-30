@@ -96,6 +96,27 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .field small { color: #7b6b76; font-size: 14px; }
 .form-foot { display: grid; gap: 4px; margin-top: 8px; }
 
+/* PERFIL: personaje y mascota */
+.avatar { display: flex; justify-content: center; align-items: flex-end; gap: 4px; }
+.avatar img { height: auto; }
+.field .label { font-family: var(--display); font-size: 9px; letter-spacing: .06em; color: #5b4a57; }
+.look-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 3px 18px; }
+.look-preview figure { margin: 0; padding: 12px 6px 8px; display: grid; gap: 8px; justify-items: center; align-content: end; min-height: 128px;
+  background: repeating-conic-gradient(#e2d7f3 0 25%, #d6c8ef 0 50%) 0 0 / 12px 12px;
+  box-shadow: -3px 0 0 var(--ink), 3px 0 0 var(--ink), 0 -3px 0 var(--ink), 0 3px 0 var(--ink); }
+.look-preview figcaption { font-family: var(--display); font-size: 7px; color: #5b4a57; background: rgba(255,253,246,.85); padding: 3px 5px; }
+.pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+.pick button { height: 72px; padding: 6px 2px; border: 0; background: #fffdf6; display: grid; place-items: end center; margin: 3px;
+  box-shadow: -3px 0 0 var(--ink), 3px 0 0 var(--ink), 0 -3px 0 var(--ink), 0 3px 0 var(--ink), inset 0 -4px 0 #e2d2ae; }
+.pick button img { height: auto; }
+.pick button[aria-checked="true"] { background: #fff1b8;
+  box-shadow: -3px 0 0 var(--gold-d), 3px 0 0 var(--gold-d), 0 -3px 0 var(--gold-d), 0 3px 0 var(--gold-d), inset 0 -4px 0 var(--gold), 0 0 0 6px var(--ink); }
+
+/* MENÚ: saludo al jugador con perfil */
+.me-card { display: flex; align-items: center; gap: 14px; padding: 12px 14px; }
+.me-card b { display: block; font-family: var(--display); font-weight: 400; font-size: 11px; line-height: 1.5; color: #a8461f; }
+.me-card span { display: block; color: #6c5b66; font-size: 16px; overflow-wrap: anywhere; }
+
 /* HISTORIA */
 .dialog { margin-top: 18px; background: var(--ink); padding: 14px 14px 12px; position: relative; cursor: pointer;
   box-shadow: -4px 0 0 0 var(--paper), 4px 0 0 0 var(--paper), 0 -4px 0 0 var(--paper), 0 4px 0 0 var(--paper), 0 0 0 8px var(--ink); margin-inline: 8px; }
@@ -236,6 +257,38 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .rlist .w span { font-size: 13px; color: #7b6b76; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rlist .p { font-family: var(--display); font-size: 10px; color: #a8461f; font-variant-numeric: tabular-nums; }
 .tag { display: inline-block; font-size: 13px; background: var(--paper-2); padding: 3px 8px; margin: 2px 2px 4px; box-shadow: -2px 0 0 var(--ink), 2px 0 0 var(--ink), 0 -2px 0 var(--ink), 0 2px 0 var(--ink); }
+
+/* ===== ARRANQUE: "desarrollado por ONNIX", estilo consola de los 90 ===== */
+.boot { position: fixed; inset: 0; z-index: 100; background: #000; display: grid; place-items: center; cursor: pointer; overflow: hidden;
+  user-select: none; -webkit-user-select: none; transition: opacity .6s; }
+.boot > * { grid-area: 1 / 1; }
+/* líneas de televisor sobre todo */
+.boot::after { content: ""; position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,.16) 2px 3px); }
+.boot-press { margin: 0; font-family: var(--display); font-size: 12px; letter-spacing: .08em; color: var(--paper); animation: blink 1s steps(1) infinite; }
+.boot:not([data-step="press"]) .boot-press { display: none; }
+
+.boot-white { position: fixed; inset: 0; background: #fff; display: grid; place-items: center; opacity: 0; transition: opacity .35s; pointer-events: none; }
+.boot[data-step="white"] .boot-white { opacity: 1; }
+.boot-iso { width: min(42vw, 180px); height: auto; overflow: visible; }
+.arc { fill: #111; transform-box: fill-box; transform-origin: 50% 50%; }
+.arc.a0 { --from: translate(140px, -90px) rotate(200deg) scale(.3); }
+.arc.a1 { --from: translate(-30px, 160px) rotate(-240deg) scale(.3); }
+.arc.a2 { --from: translate(-150px, -60px) rotate(160deg) scale(.3); }
+.boot[data-step="white"] .arc { animation: arc-in 1.2s cubic-bezier(.15,.75,.25,1) both; }
+.boot[data-step="white"] .arc.a1 { animation-delay: .1s; }
+.boot[data-step="white"] .arc.a2 { animation-delay: .2s; }
+@keyframes arc-in { from { transform: var(--from); opacity: 0; } 50% { opacity: 1; } }
+.boot[data-step="white"] .boot-iso { animation: iso-pop .5s 1.25s both; }
+@keyframes iso-pop { 40% { transform: scale(1.08); } }
+
+.boot-black { display: grid; justify-items: center; gap: 22px; opacity: 0; transition: opacity .5s; perspective: 500px; pointer-events: none; }
+.boot[data-step="black"] .boot-black { opacity: 1; }
+.boot-black small { font-family: var(--display); font-size: 9px; letter-spacing: .22em; color: #9a9ab0; }
+.boot-logo { width: min(76vw, 340px); height: auto; }
+/* pocos cuadros por segundo y giro en 3D: el "temblor" de los gráficos de la época */
+.boot[data-step="black"] .boot-logo { animation: ps1-float 2.6s steps(14) infinite alternate; }
+@keyframes ps1-float { from { transform: rotateY(-26deg) rotateX(8deg); } to { transform: rotateY(26deg) rotateX(-6deg); } }
+.boot[data-step="out"] { opacity: 0; pointer-events: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { VET } from '../game/sprites'
+import { VETS } from '../game/sprites'
 import { playerName, vetName, type Player } from '../lib/types'
 import { FacadeScene } from './FacadeScene'
 
@@ -25,13 +25,14 @@ export function Intro({ player, onDone }: { player: Player; onDone: () => void }
   useEffect(() => {
     const p = portrait.current!.getContext('2d')!
     p.imageSmoothingEnabled = false
-    p.drawImage(VET.open, 0, 0, 12, 10, 2, 4, 12, 10)
+    p.clearRect(0, 0, 16, 16)
+    p.drawImage((VETS[player.o] ?? VETS[2]).open, 0, 0, 12, 10, 2, 4, 12, 10)
     p.fillStyle = '#f4f7fb'
     p.fillRect(3, 14, 10, 2)
     p.fillStyle = '#3fb39a'
     p.fillRect(5, 14, 1, 2)
     p.fillRect(10, 14, 1, 2)
-  }, [])
+  }, [player.o])
 
   // efecto de máquina de escribir
   useEffect(() => {

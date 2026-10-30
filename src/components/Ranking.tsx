@@ -5,11 +5,12 @@ import type { Screen } from '../lib/types'
 
 interface Props {
   go: (s: Screen) => void
+  play: () => void
   /** resultado del turno recién guardado */
   mine: (SaveResult & { pts: number }) | null
 }
 
-export function Ranking({ go, mine }: Props) {
+export function Ranking({ go, play, mine }: Props) {
   const [rows, setRows] = useState<Score[] | null>(null)
   const [live, setLive] = useState(true)
 
@@ -79,7 +80,7 @@ export function Ranking({ go, mine }: Props) {
         </ol>
       </div>
       <div style={{ display: 'grid', gap: 4, marginTop: 18 }}>
-        <button className="btn" onClick={() => go('form')}>▶ JUGAR</button>
+        <button className="btn" onClick={play}>▶ JUGAR</button>
         <button className="linkish" onClick={() => go('menu')}>Volver al menú</button>
       </div>
     </section>

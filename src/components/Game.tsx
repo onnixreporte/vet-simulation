@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { isMuted, setMuted } from '../game/audio'
 import { GameEngine, TOTAL_TIME, type Ui } from '../game/engine'
-import { ICONS, PETS, toUrl } from '../game/sprites'
+import { ICONS, PETS, VETS, toUrl } from '../game/sprites'
 import { vetName, type Player } from '../lib/types'
 
 interface Props {
@@ -55,11 +55,11 @@ export function Game({ player, onSave }: Props) {
   }
 
   useEffect(() => {
-    const e = new GameEngine(canvas.current!, overlay.current!, setUi)
+    const e = new GameEngine(canvas.current!, overlay.current!, setUi, VETS[player.o] ?? VETS[2])
     engine.current = e
     e.start()
     return () => e.destroy()
-  }, [])
+  }, [player.o])
 
   const ptsRef = useRetrigger(ui?.ptsBump ?? 0)
   const countRef = useRetrigger(ui?.countBump ?? 0)

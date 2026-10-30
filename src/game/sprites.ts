@@ -178,17 +178,22 @@ function animal(rows: string[], pal: Pal): Animal {
   return { c, f: flipped(c) }
 }
 
-export const VET = person({ hair: '#3a241a', skin: '#f0c49b', shirt: '#f4f7fb', accent: '#3fb39a', pants: '#3fb39a' })
-
-export const OWNERS: Person[] = [
-  person({ hair: '#e8a83a', skin: '#f6d2ae', shirt: '#e55d5d' }),
-  person({ hair: '#2e211c', skin: '#c98c5f', shirt: '#4f7fd1' }),
-  person({ hair: '#b5532c', skin: '#f2c7a0', shirt: '#7bbf6a', pants: '#5b3f2a' }),
-  person({ hair: '#1d1d2a', skin: '#8a5a3b', shirt: '#f0b43c' }),
-  person({ hair: '#dcdce6', skin: '#f0c8a8', shirt: '#9a6ad0' }),
-  person({ hair: '#7a3fb0', skin: '#e8b892', shirt: '#ff8fb1', pants: '#2b2b3d' }),
-  person({ hair: '#5a3a22', skin: '#d9a274', shirt: '#3fb3c9', pants: '#43405a' }),
+// Personajes: los dueños que llegan a la clínica y también los que elige el jugador para su perfil.
+const LOOKS = [
+  { hair: '#e8a83a', skin: '#f6d2ae', shirt: '#e55d5d' },
+  { hair: '#2e211c', skin: '#c98c5f', shirt: '#4f7fd1' },
+  { hair: '#b5532c', skin: '#f2c7a0', shirt: '#7bbf6a', pants: '#5b3f2a' },
+  { hair: '#1d1d2a', skin: '#8a5a3b', shirt: '#f0b43c' },
+  { hair: '#dcdce6', skin: '#f0c8a8', shirt: '#9a6ad0' },
+  { hair: '#7a3fb0', skin: '#e8b892', shirt: '#ff8fb1', pants: '#2b2b3d' },
+  { hair: '#5a3a22', skin: '#d9a274', shirt: '#3fb3c9', pants: '#43405a' },
 ]
+
+/** Con su ropa: así se ven los dueños y el jugador en el podio del ranking. */
+export const OWNERS: Person[] = LOOKS.map((l) => person(l))
+
+/** El mismo personaje con bata blanca: así atiende el jugador en la clínica. */
+export const VETS: Person[] = LOOKS.map((l) => person({ hair: l.hair, skin: l.skin, shirt: '#f4f7fb', accent: '#3fb39a', pants: '#3fb39a' }))
 
 export const PETS = {
   perroMarron: animal(DOG, { b: '#c4834a', d: '#7a4b2a', e: INK, n: INK, m: '#ff7a8a' }),
@@ -203,6 +208,11 @@ export const PETS = {
   elefante: animal(ELEPHANT, { g: '#a9abc8', G: '#c7c9e0', d: '#8587a8', e: INK }),
 }
 export type PetKey = keyof typeof PETS
+
+export const PET_NAMES: Record<PetKey, string> = {
+  perroMarron: 'Perro marrón', perroNegro: 'Perro negro', perroBlanco: 'Perro blanco', perroSalchi: 'Salchicha',
+  gatoCrema: 'Gato crema', gatoGris: 'Gato gris', gatoNaranja: 'Gato naranja', unicornio: 'Unicornio', dino: 'Dino', elefante: 'Elefante',
+}
 
 const icPal: Pal = { y: '#ffc94a', W: '#fff3b8', O: '#d18f1d', p: '#ff9ab0', w: '#fff5df' }
 export const ICONS = Object.fromEntries(

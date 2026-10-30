@@ -137,6 +137,79 @@ export const sfx = {
     seq(stars >= 2 ? [72, 76, 79, 84, 79, 84, 88] : stars === 1 ? [72, 76, 79, 76, 72] : [72, 70, 67, 64], 0.11, 'square', 0.15, 0.2),
 }
 
+/* ---------- arranque "desarrollado por ONNIX" ---------- */
+
+/** Acorde de sierras desafinadas con un filtro que se abre y se cierra: la "bocanada" del arranque. */
+function pad(dest: AudioNode, notes: number[], at: number, attack: number, dur: number, vol: number, from: number, to: number) {
+  const c = ctx!
+  const f = c.createBiquadFilter()
+  f.type = 'lowpass'
+  f.Q.value = 4
+  f.frequency.setValueAtTime(from, at)
+  f.frequency.exponentialRampToValueAtTime(to, at + attack)
+  f.frequency.exponentialRampToValueAtTime(from, at + dur)
+  const g = c.createGain()
+  g.gain.setValueAtTime(0.0001, at)
+  g.gain.exponentialRampToValueAtTime(vol, at + attack)
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+  f.connect(g).connect(dest)
+  for (const n of notes) {
+    for (const cents of [-8, 8]) {
+      const o = c.createOscillator()
+      o.type = 'sawtooth'
+      o.frequency.value = hz(n)
+      o.detune.value = cents
+      o.connect(f)
+      o.start(at)
+      o.stop(at + dur + 0.05)
+    }
+  }
+}
+
+let bootOut: GainNode | null = null
+
+/**
+ * Sonido del arranque, sincronizado con la intro: acorde que crece mientras se arma el logo,
+ * campanitas cuando encaja (~1.3 s) y un golpe grave con la pantalla negra (~3 s).
+ * Va dentro del toque que habilita el audio, por eso espera a que el contexto arranque.
+ */
+export function bootChime() {
+  const c = ensure()
+  if (!c || muted) return
+  c.resume()
+    .catch(() => {})
+    .then(() => {
+      if (c.state !== 'running') return
+      const t = c.currentTime + 0.05
+      const out = c.createGain()
+      out.connect(sfxBus)
+      bootOut = out
+      // eco corto para que suene "grande"
+      const echo = c.createDelay(1)
+      echo.delayTime.value = 0.27
+      const fb = c.createGain()
+      fb.gain.value = 0.35
+      out.connect(echo).connect(fb).connect(echo)
+      fb.connect(sfxBus)
+
+      pad(out, [41, 48, 53, 57, 60], t, 1.2, 3.1, 0.08, 200, 2600)
+      ;[84, 88, 91, 96, 100].forEach((n, i) => {
+        tone(out, hz(n), t + 1.25 + i * 0.07, 1.6, 'sine', 0.07)
+        tone(out, hz(n) * 2.01, t + 1.25 + i * 0.07, 0.6, 'sine', 0.02)
+      })
+      hiss(out, t + 1.15, 0.6, 0.04, 3500)
+      tone(out, 72, t + 3, 1.8, 'sine', 0.5, 36)
+      pad(out, [38, 45, 50, 53], t + 3, 0.35, 2.6, 0.06, 150, 900)
+    })
+}
+
+/** Corta el sonido del arranque con un fundido rápido (cuando se saltea la intro). */
+export function stopBootChime() {
+  if (!ctx || !bootOut) return
+  bootOut.gain.setTargetAtTime(0, ctx.currentTime, 0.08)
+  bootOut = null
+}
+
 /* ---------- música ---------- */
 
 // Loop original de 4 compases (C, G, Am, F), en corcheas. null = silencio.
