@@ -111,6 +111,8 @@ const ICON_ROWS = {
   clock: ['..kkkk..', '.kwwwwk.', 'kwwkwwwk', 'kwwkwwwk', 'kwwkkkwk', 'kwwwwwwk', '.kwwwwk.', '..kkkk..'],
   star: ['...kk...', '...yk...', 'kkkyykkk', 'kyyyyyyk', '.kyyyyk.', '.kyykyk.', 'kyk..kyk', 'kk....kk'],
   arrow: ['...k....', '...kk...', 'kkkkyk..', 'kyyyyyk.', 'kyyyyyk.', 'kkkkyk..', '...kk...', '...k....'],
+  sound: ['...w..y.', '..ww...y', 'wwww.y.y', 'wwww.y.y', 'wwww.y.y', 'wwww.y.y', '..ww...y', '...w..y.'],
+  mute: ['...w....', '..ww....', 'wwww....', 'wwww.p.p', 'wwww..p.', 'wwww.p.p', '..ww....', '...w....'],
 }
 
 export function compile(rows: string[], pal: Pal): HTMLCanvasElement {

@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
+import { isMuted, setMuted } from '../game/audio'
 import { GameEngine, TOTAL_TIME, type Ui } from '../game/engine'
 import { ICONS, PETS, toUrl } from '../game/sprites'
 import { vetName, type Player } from '../lib/types'
@@ -36,6 +37,12 @@ export function Game({ player, onSave }: Props) {
   const engine = useRef<GameEngine | null>(null)
   const [ui, setUi] = useState<Ui | null>(null)
   const [saving, setSaving] = useState(false)
+  const [mute, setMute] = useState(isMuted)
+
+  const toggleMute = () => {
+    setMuted(!mute)
+    setMute(!mute)
+  }
 
   const save = async () => {
     if (saving || !ui) return
@@ -69,7 +76,12 @@ export function Game({ player, onSave }: Props) {
       <div className="hud">
         <div className="vetname">
           <b>{vetName(player)}</b>
-          <span>DÍA 1</span>
+          <span className="hud-right">
+            DÍA 1
+            <button type="button" className="mute" onClick={toggleMute} aria-label={mute ? 'Activar sonido' : 'Silenciar'} aria-pressed={mute}>
+              <img className="px" src={mute ? ICONS.mute : ICONS.sound} alt="" />
+            </button>
+          </span>
         </div>
         <div className="timer">
           <img className="px" src={ICONS.clock} alt="" />

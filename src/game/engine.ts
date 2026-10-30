@@ -1,8 +1,11 @@
+import { music, sfx } from './audio'
 import { getCases, type Case, type RoomId } from './cases'
 import { ROOM, FACE, R, drawClinic, drawDesk, setCtx, shadow, W, H } from './draw'
 import { OWNERS, PETS, VET, type Animal, type Person } from './sprites'
 
 export const TOTAL_TIME = 90
+/** Al final del turno los pacientes se mueven a esta velocidad respecto del inicio. */
+const MAX_PACE = 1.9
 
 export type Phase = 'idle' | 'arriving' | 'triage' | 'diag' | 'send' | 'moving' | 'over'
 export type SheetState = 'closed' | 'open' | 'mini'
@@ -84,6 +87,7 @@ export class GameEngine {
   private last = 0
   private lastEmit = 0
   private timers: number[] = []
+  private lastTick = 0
   ui: Ui
 
   private canvas: HTMLCanvasElement
@@ -115,6 +119,11 @@ export class GameEngine {
   private later(fn: () => void, ms: number) {
     this.timers.push(window.setTimeout(fn, ms))
   }
+  /** Ritmo del turno: 1 al empezar, MAX_PACE al terminar. Las penalizaciones de tiempo lo adelantan. */
+  private pace() {
+    const done = 1 - Math.max(0, this.ui.time) / TOTAL_TIME
+    return 1 + (MAX_PACE - 1) * done
+  }
 
   start() {
     this.stopLoop()
@@ -127,12 +136,16 @@ export class GameEngine {
     this.drag = null
     this.overlay.querySelectorAll('.bubble,.pop').forEach((n) => n.remove())
     this.set(this.freshUi())
+    this.lastTick = 0
     this.nextPatient()
     this.last = performance.now()
     this.raf = requestAnimationFrame(this.frame)
+    music.setPace(1)
+    music.start()
   }
 
   destroy() {
+    music.stop()
     this.stopLoop()
     this.timers.forEach(clearTimeout)
     this.canvas.removeEventListener('pointerdown', this.onDown)
@@ -146,7 +159,10 @@ export class GameEngine {
 
   /* ---------- acciones desde la ficha ---------- */
   choose(i: number) {
-    if (this.ui.phase === 'triage') return i === 0 ? this.askDx() : this.sendToWait()
+    if (this.ui.phase === 'triage') {
+      sfx.blip()
+      return i === 0 ? this.askDx() : this.sendToWait()
+    }
     if (this.ui.phase !== 'diag' || !this.cur) return
     const ok = this.dxOk[i]
     const c = this.cur.c
@@ -213,6 +229,8 @@ export class GameEngine {
     this.set({ num: this.ui.num + 1, phase: 'arriving', sheet: 'closed', hint: 'Llega un paciente...' })
     this.moveTo(e, [[144, 186], [144, 160], [118, 140], COUNTER], () => {
       if (this.ui.phase === 'over') return
+      if (e.c.raro) sfx.sparkle()
+      else sfx.ding()
       this.say(e.c.dice, e)
       this.set({ ficha: { c: e.c, owner: e.owner } })
       this.askAttend()
@@ -268,7 +286,7 @@ export class GameEngine {
         const [ax, ay, aw, ah] = R0.area
         this.moveTo(e, [...R0.path.slice(0, -1), [ax + Math.random() * aw, ay + Math.random() * ah]], done, 70)
       }
-      this.later(() => this.nextPatient(), 700)
+      this.later(() => this.nextPatient(), 700 / this.pace())
     } else {
       this.penalty(10, at)
       this.set({ hint: `${c.n} no va a ${R0.label}. *Probá otra sala.*` })
@@ -287,7 +305,10 @@ export class GameEngine {
     this.canvas.classList.remove('can-grab')
     this.say('')
     const p = this.ui.pts
-    this.set({ phase: 'over', sheet: 'closed', stars: p >= 1200 ? 3 : p >= 500 ? 2 : p > 0 ? 1 : 0 })
+    const stars = p >= 1200 ? 3 : p >= 500 ? 2 : p > 0 ? 1 : 0
+    this.set({ phase: 'over', sheet: 'closed', stars })
+    music.stop()
+    sfx.end(stars)
   }
 
   /* ---------- feedback ---------- */
@@ -321,10 +342,12 @@ export class GameEngine {
     } catch {
       /* algunos navegadores no lo permiten */
     }
+    sfx.bad()
     this.pop(`-${sec}s`, at, 'bad')
     this.set({ time: Math.max(0, this.ui.time - sec), hit: this.ui.hit + 1 })
   }
   private award(n: number, at: number[]) {
+    sfx.coin(n >= 100)
     this.pop(`+${n}`, at, 'good')
     this.set({ pts: this.ui.pts + n, ptsBump: this.ui.ptsBump + 1 })
   }
@@ -348,6 +371,7 @@ export class GameEngine {
       ev.preventDefault()
       this.canvas.setPointerCapture(ev.pointerId)
       this.drag = { id: ev.pointerId, dx: e.x - x, dy: e.y - y }
+      sfx.pop()
       e.path = []
       e.lift = true
     } else {
@@ -384,6 +408,12 @@ export class GameEngine {
       if (now - this.lastEmit > 100) {
         this.lastEmit = now
         this.set({ time })
+        music.setPace(1 + (this.pace() - 1) * 0.5)
+      }
+      const secs = Math.ceil(time)
+      if (secs <= 10 && secs > 0 && secs !== this.lastTick) {
+        this.lastTick = secs
+        sfx.tick(secs <= 3)
       }
       if (time <= 0) this.endGame()
     }
@@ -393,6 +423,7 @@ export class GameEngine {
   }
 
   private update(dt: number) {
+    const pace = this.pace()
     for (const e of this.ents) {
       e.moving = false
       if (e.path.length && !(this.drag && e === this.cur)) {
@@ -400,7 +431,7 @@ export class GameEngine {
           e.path.shift()
           continue
         }
-        const [tx, ty] = e.path[0], dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy), step = e.speed * dt
+        const [tx, ty] = e.path[0], dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy), step = e.speed * pace * dt
         if (Math.abs(dx) > 0.5) e.flip = dx < 0
         if (d <= step) {
           e.x = tx

@@ -4,6 +4,7 @@ import { Intro } from './components/Intro'
 import { Menu } from './components/Menu'
 import { Ranking } from './components/Ranking'
 import { Register } from './components/Register'
+import { unlockAudio } from './game/audio'
 import { loadCases } from './lib/content'
 import { saveScore, type SaveResult } from './lib/scores'
 import { playerName, vetName, type Player, type Screen } from './lib/types'
@@ -15,6 +16,13 @@ export default function App() {
 
   useEffect(() => {
     loadCases()
+    // el navegador habilita el audio recién después de una interacción
+    window.addEventListener('pointerdown', unlockAudio)
+    window.addEventListener('keydown', unlockAudio)
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio)
+      window.removeEventListener('keydown', unlockAudio)
+    }
   }, [])
 
   const go = (s: Screen) => {

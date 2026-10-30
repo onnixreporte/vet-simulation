@@ -27,6 +27,7 @@ src/
     draw.ts      dibujo de la clínica y la fachada sobre canvas (192x256 px lógicos)
     cases.ts     casos clínicos y salas
     engine.ts    lógica del juego: cola de pacientes, tiempo, puntos, arrastrar y soltar
+    audio.ts     música y efectos chiptune sintetizados con Web Audio (sin archivos)
   components/    pantallas: Menu, Register, Intro, Game, Ranking
   lib/
     supabase.ts  cliente REST mínimo (sin supabase-js)

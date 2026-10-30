@@ -127,6 +127,10 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .timebar span { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 9px; color: var(--ink); z-index: 1; }
 .timebar.hit { animation: shake .3s; }
 @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.hud-right { display: flex; align-items: center; gap: 10px; }
+.mute { display: grid; place-items: center; width: 28px; height: 28px; margin: -8px -6px -8px 0; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.mute img { width: 16px; height: 16px; }
+.mute:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
 .stat { display: flex; align-items: center; gap: 6px; font-family: var(--display); font-size: 13px; color: var(--gold); font-variant-numeric: tabular-nums; }
 .stat img { width: 18px; height: 18px; }
 .stat.count { color: var(--paper); }
