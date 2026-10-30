@@ -1,21 +1,23 @@
 import { useEffect, useState } from 'react'
 import { OWNERS, PETS, toUrl } from '../game/sprites'
 import { topScores, type SaveResult, type Score } from '../lib/scores'
-import type { Screen } from '../lib/types'
+import { MODO_NOMBRE, type Modo, type Screen } from '../lib/types'
 
 interface Props {
   go: (s: Screen) => void
+  /** cada modo tiene su propio ranking */
+  modo: Modo
   /** resultado del turno recién guardado */
   mine: (SaveResult & { pts: number }) | null
 }
 
-export function Ranking({ go, mine }: Props) {
+export function Ranking({ go, modo, mine }: Props) {
   const [rows, setRows] = useState<Score[] | null>(null)
   const [live, setLive] = useState(true)
 
   useEffect(() => {
     let alive = true
-    topScores(10).then((b) => {
+    topScores(10, modo).then((b) => {
       if (!alive) return
       setRows(b.rows.map((r) => ({ ...r, me: r.me || (mine?.id != null && r.id === mine.id) })))
       setLive(b.live)
@@ -23,23 +25,23 @@ export function Ranking({ go, mine }: Props) {
     return () => {
       alive = false
     }
-  }, [mine])
+  }, [mine, modo])
 
   const list = rows ?? []
   const shown = list.some((r) => r.me && r.id != null)
   const note = mine?.error
     ? mine.error
     : mine?.puesto && !shown
-      ? `Tu turno: ${mine.pts} puntos · puesto ${mine.puesto}`
+      ? `${modo === 'turno' ? 'Tu turno' : 'Tu partida'}: ${mine.pts} puntos · puesto ${mine.puesto}`
       : null
 
   return (
     <section>
       <div className="logo" style={{ paddingBottom: 10 }}>
-        <small>LOS MEJORES TURNOS</small>
+        <small>{modo === 'turno' ? 'LOS MEJORES TURNOS' : 'MODO SECRETO · ' + MODO_NOMBRE[modo].toUpperCase()}</small>
       </div>
       <div className="pbox rank-card">
-        <h2>Ranking</h2>
+        <h2>{modo === 'turno' ? 'Ranking' : 'Ranking ' + MODO_NOMBRE[modo].toLowerCase()}</h2>
         {!live && <span className="tag">Datos de ejemplo</span>}
         {rows === null && <p className="lead">Cargando…</p>}
         {rows !== null && list.length === 0 && <p className="lead">Todavía nadie guardó un turno. ¡Sé el primero!</p>}
@@ -80,7 +82,7 @@ export function Ranking({ go, mine }: Props) {
       </div>
       <div style={{ display: 'grid', gap: 4, marginTop: 18 }}>
         <button className="btn" onClick={() => go('form')}>▶ JUGAR</button>
-        <button className="linkish" onClick={() => go('menu')}>Volver al menú</button>
+        <button className="linkish" onClick={() => go(modo === 'turno' ? 'menu' : 'secreto')}>{modo === 'turno' ? 'Volver al menú' : 'Volver al modo secreto'}</button>
       </div>
     </section>
   )

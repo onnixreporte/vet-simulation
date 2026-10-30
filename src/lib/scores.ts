@@ -1,4 +1,5 @@
 import type { PetKey } from '../game/sprites'
+import type { Modo } from './types'
 import { hasSupabase, rpc, SupabaseError } from './supabase'
 
 export interface Score {
@@ -7,8 +8,10 @@ export interface Score {
   ig: string
   v: string
   p: number
-  /** pacientes atendidos en el turno */
+  /** pacientes atendidos en el turno, o bichos eliminados en el modo secreto */
   c?: number
+  /** oleada a la que se llegó (solo modo bichos) */
+  w?: number
   /** índice del dueño y mascota que se muestran en el podio */
   o: number
   pet: PetKey
@@ -30,6 +33,11 @@ export interface Board {
 }
 
 // Se muestran cuando no hay Supabase configurado (desarrollo local) o no responde.
+const SAMPLE_BICHOS: Score[] = [
+  { n: 'Dr. Mata', ig: '@matapulgas', v: 'Vet Antiplagas', p: 6200, o: 1, pet: 'perroNegro' },
+  { n: 'Caro', ig: '@caro.vet', v: 'Patitas Felices', p: 3850, o: 5, pet: 'gatoGris' },
+  { n: 'Tomi', ig: '@tomivet', v: 'Clínica Norte', p: 2100, o: 3, pet: 'dino' },
+]
 const SAMPLE: Score[] = [
   { n: 'Dra. Sofía', ig: '@sofi.vet', v: 'Veterinaria Patitas', p: 2450, o: 5, pet: 'gatoCrema' },
   { n: 'Marcos', ig: '@marcos_vet', v: 'Clínica Huellitas', p: 2100, o: 1, pet: 'perroNegro' },
@@ -39,18 +47,19 @@ const SAMPLE: Score[] = [
   { n: 'Pedro', ig: '@pedrovet', v: 'Vet del Barrio', p: 980, o: 6, pet: 'dino' },
 ]
 const KEY = 'sp-scores'
+const keyOf = (m: Modo) => (m === 'turno' ? KEY : `${KEY}-${m}`)
 
-function readLocal(): Score[] {
+function readLocal(m: Modo): Score[] {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || '[]')
+    return JSON.parse(localStorage.getItem(keyOf(m)) || '[]')
   } catch {
     return []
   }
 }
 
-function saveLocal(s: Score) {
+function saveLocal(s: Score, m: Modo) {
   try {
-    localStorage.setItem(KEY, JSON.stringify([...readLocal(), { ...s, me: true }].slice(-10)))
+    localStorage.setItem(keyOf(m), JSON.stringify([...readLocal(m), { ...s, me: true }].slice(-10)))
   } catch {
     /* sin almacenamiento disponible */
   }
@@ -66,15 +75,17 @@ interface RankRow {
   pet: PetKey
 }
 
-export async function saveScore(s: Score): Promise<SaveResult> {
+export async function saveScore(s: Score, modo: Modo = 'turno'): Promise<SaveResult> {
   if (!hasSupabase) {
-    saveLocal(s)
+    saveLocal(s, modo)
     return { local: true }
   }
   try {
+    // el turno normal no manda p_mode, así sigue andando contra la base sin la migración de modos
+    const extra = modo === 'turno' ? {} : { p_mode: modo, p_wave: s.w ?? 0 }
     const [r] = await rpc<{ id: string; rank: number }[]>('submit_score', {
       p_player_name: s.n, p_instagram: s.ig, p_vet_name: s.v, p_points: s.p, p_patients: s.c ?? 0,
-      p_owner_idx: s.o, p_pet: s.pet,
+      p_owner_idx: s.o, p_pet: s.pet, ...extra,
     })
     return { id: r.id, puesto: r.rank, local: false }
   } catch (err) {
@@ -86,10 +97,10 @@ export async function saveScore(s: Score): Promise<SaveResult> {
   }
 }
 
-export async function topScores(limit = 10): Promise<Board> {
+export async function topScores(limit = 10, modo: Modo = 'turno'): Promise<Board> {
   if (hasSupabase) {
     try {
-      const rows = await rpc<RankRow[]>('top_scores', { lim: limit })
+      const rows = await rpc<RankRow[]>('top_scores', modo === 'turno' ? { lim: limit } : { lim: limit, p_mode: modo })
       return {
         live: true,
         rows: rows.map((r) => ({
@@ -100,5 +111,6 @@ export async function topScores(limit = 10): Promise<Board> {
       console.warn('No se pudo leer el ranking de Supabase.', err)
     }
   }
-  return { live: false, rows: [...SAMPLE, ...readLocal()].sort((a, b) => b.p - a.p).slice(0, limit) }
+  const sample = modo === 'turno' ? SAMPLE : SAMPLE_BICHOS
+  return { live: false, rows: [...sample, ...readLocal(modo)].sort((a, b) => b.p - a.p).slice(0, limit) }
 }

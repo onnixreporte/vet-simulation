@@ -132,6 +132,16 @@ export const sfx = {
     tone(sfxBus, last ? 1320 : 990, t, 0.05, 'square', 0.09)
     hiss(sfxBus, t, 0.03, 0.05)
   }),
+  /** jeringazo del modo bichos */
+  shot: () => play((t) => tone(sfxBus, 1400, t, 0.04, 'square', 0.035, 700)),
+  /** bicho aplastado */
+  squish: () =>
+    play((t) => {
+      tone(sfxBus, 320, t, 0.08, 'square', 0.09, 110)
+      hiss(sfxBus, t, 0.05, 0.05, 2500)
+    }),
+  /** vacunazo: onda expansiva */
+  vacuna: () => seq([72, 79, 84, 91, 96], 0.04, 'square', 0.14, 0.1),
   /** fin del turno: más alegre con más estrellas */
   end: (stars: number) =>
     seq(stars >= 2 ? [72, 76, 79, 84, 79, 84, 88] : stars === 1 ? [72, 76, 79, 76, 72] : [72, 70, 67, 64], 0.11, 'square', 0.15, 0.2),
