@@ -72,7 +72,7 @@ button { font: inherit; cursor: pointer; color: inherit; }
 /* MENÚ */
 .menu { display: grid; gap: 16px; }
 .logo { text-align: center; padding: 6px 0 2px; }
-.logo small { display: block; font-family: var(--display); font-size: 10px; color: var(--mint); letter-spacing: .14em; margin-bottom: 12px; }
+.logo small { display: block; font-family: var(--display); font-size: 10px; line-height: 1.7; color: var(--mint); letter-spacing: .14em; margin-bottom: 12px; }
 .logo h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(25px, 8.4vw, 36px); line-height: 1.25; color: var(--gold);
   text-shadow: 0 3px 0 var(--coral), 3px 3px 0 var(--coral), 3px 6px 0 var(--ink), 6px 6px 0 var(--ink), -3px 0 0 var(--ink), 0 -3px 0 var(--ink), -3px 3px 0 var(--ink);
   animation: logo 2.4s ease-in-out infinite; }

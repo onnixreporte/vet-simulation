@@ -102,7 +102,7 @@ export default function App() {
       {screen === 'intro' && <Intro player={player} onDone={() => go('game')} />}
       {screen === 'game' && <Game player={player} onSave={save} />}
       {screen === 'bichos' && modo !== 'turno' && (
-        <Bichos key={modo} player={player} modo={modo} onSave={save} onExit={() => pick('turno', 'menu')} />
+        <Bichos key={modo} player={player} modo={modo} onSave={save} onExit={() => pick('turno', 'menu')} onBack={() => go('secreto')} />
       )}
       {screen === 'ranking' && <Ranking go={go} play={() => play(modo)} modo={modo} mine={mine} />}
     </div>

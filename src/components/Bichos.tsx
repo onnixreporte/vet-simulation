@@ -10,7 +10,10 @@ interface Props {
   player: Player
   modo: Modo
   onSave: (pts: number, kills: number, wave: number) => Promise<void>
+  /** sale del modo secreto, al menú */
   onExit: () => void
+  /** vuelve a la pantalla del modo secreto (desde la elección de especialidad) */
+  onBack: () => void
 }
 
 /** Reinicia una animación CSS cada vez que cambia `n`. */
@@ -57,13 +60,13 @@ function ClasePicker({ modo, vet, onPick, onExit }: { modo: Modo; vet: Person; o
   )
 }
 
-export function Bichos({ player, modo, onSave, onExit }: Props) {
+export function Bichos({ player, modo, onSave, onExit, onBack }: Props) {
   const [clase, setClase] = useState<ClaseId | null>(null)
-  if (!clase) return <ClasePicker modo={modo} vet={VETS[player.o] ?? VETS[2]} onPick={setClase} onExit={onExit} />
+  if (!clase) return <ClasePicker modo={modo} vet={VETS[player.o] ?? VETS[2]} onPick={setClase} onExit={onBack} />
   return <Partida key={clase} player={player} modo={modo} clase={clase} onSave={onSave} onExit={onExit} onChange={() => setClase(null)} />
 }
 
-function Partida({ player, modo, clase, onSave, onExit, onChange }: Props & { clase: ClaseId; onChange: () => void }) {
+function Partida({ player, modo, clase, onSave, onExit, onChange }: Omit<Props, 'onBack'> & { clase: ClaseId; onChange: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const overlay = useRef<HTMLDivElement>(null)
   const engine = useRef<BichosEngine | null>(null)
