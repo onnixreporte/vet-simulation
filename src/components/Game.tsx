@@ -3,6 +3,7 @@ import { isMuted, setMuted } from '../game/audio'
 import { GameEngine, TOTAL_TIME, type Ui } from '../game/engine'
 import { ICONS, PETS, VETS, toUrl } from '../game/sprites'
 import { vetName, type Player } from '../lib/types'
+import { ShareButtons } from './ShareButtons'
 
 interface Props {
   player: Player
@@ -189,6 +190,7 @@ export function Game({ player, onSave }: Props) {
               {saving ? 'GUARDANDO…' : 'GUARDAR EN RANKING'}
             </button>
             <button className="btn light" onClick={() => engine.current?.start()}>JUGAR DE NUEVO</button>
+            <ShareButtons player={player} modo="turno" pts={ui.pts} count={ui.count} stars={ui.stars} />
           </div>
         </div>
       )}

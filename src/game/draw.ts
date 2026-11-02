@@ -199,7 +199,8 @@ const walkers: { o: number; p: PetKey; off: number }[] = [
   { o: 3, p: 'dino', off: 210 }, { o: 5, p: 'gatoGris', off: 280 },
 ]
 
-export function drawFacade(t: number) {
+/** `people = false` deja la vereda vacía (la usa la imagen para compartir). */
+export function drawFacade(t: number, people = true) {
   const sky = ['#5aaee6', '#7cc2ee', '#a3d6f3', '#cfe9f5', '#ffe6b8']
   sky.forEach((c, i) => {
     R(0, i * 20, W, 20, c)
@@ -247,7 +248,7 @@ export function drawFacade(t: number) {
   R(0, 166, W, 18, '#d9d2c5'); for (let x = 0; x < W; x += 16) R(x, 166, 1, 18, '#bfb6a6'); R(0, 175, W, 1, '#bfb6a6')
   R(0, 184, W, 4, '#a9a196'); R(0, 188, W, 12, '#5a5566')
   for (let x = -((t * 30) % 24); x < W; x += 24) R(x, 193, 12, 2, '#f2e6a0')
-  walkers.forEach((w, i) => {
+  if (people) walkers.forEach((w, i) => {
     const x = ((t * 16 + w.off) % 340) - 40, y = 180, bob = ((t * 8 + i) | 0) % 2
     const o = OWNERS[w.o], pet = PETS[w.p]
     shadow(x, y, 10); shadow(x + 15, y, 12)

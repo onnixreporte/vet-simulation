@@ -5,6 +5,7 @@ import {
 } from '../game/bichos'
 import { ICONS, VETS, toUrl, type Person } from '../game/sprites'
 import { MODO_NOMBRE, vetName, type Player } from '../lib/types'
+import { ShareButtons } from './ShareButtons'
 
 interface Props {
   player: Player
@@ -248,6 +249,7 @@ function Partida({ player, modo, clase, onSave, onExit, onChange }: Omit<Props, 
               {saving ? 'GUARDANDO…' : 'GUARDAR EN RANKING'}
             </button>
             <button className="btn light" onClick={() => engine.current?.start()}>JUGAR DE NUEVO</button>
+            <ShareButtons player={player} modo={modo} pts={ui.pts} count={ui.kills} wave={ui.wave} />
             <button className="linkish" onClick={onChange}>Cambiar especialidad</button>
             <button className="linkish" onClick={onExit}>Salir del modo secreto</button>
           </div>
