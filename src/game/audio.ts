@@ -213,6 +213,25 @@ export function bootChime() {
     })
 }
 
+/** Jingle corto de 8 bits para la pantalla "un juego de Petsys", antes del de ONNIX. */
+export function petsysJingle() {
+  const c = ensure()
+  if (!c || muted) return
+  c.resume()
+    .catch(() => {})
+    .then(() => {
+      if (c.state !== 'running') return
+      const t = c.currentTime + 0.05
+      const out = c.createGain()
+      out.connect(sfxBus)
+      bootOut = out
+      ;[72, 76, 79, 84].forEach((n, i) => tone(out, hz(n), t + 0.3 + i * 0.1, 0.16, 'square', 0.045))
+      tone(out, hz(88), t + 0.72, 0.8, 'square', 0.045)
+      tone(out, hz(79), t + 0.72, 0.8, 'triangle', 0.08)
+      tone(out, hz(48), t + 0.72, 0.6, 'triangle', 0.12)
+    })
+}
+
 /** Corta el sonido del arranque con un fundido rápido (cuando se saltea la intro). */
 export function stopBootChime() {
   if (!ctx || !bootOut) return

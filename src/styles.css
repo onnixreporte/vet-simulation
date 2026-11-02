@@ -277,8 +277,18 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .boot > * { grid-area: 1 / 1; }
 /* líneas de televisor sobre todo */
 .boot::after { content: ""; position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,.16) 2px 3px); }
-.boot-press { margin: 0; font-family: var(--display); font-size: 12px; letter-spacing: .08em; color: var(--paper); animation: blink 1s steps(1) infinite; }
+.boot-press { display: grid; justify-items: center; gap: 28px; padding: 16px; }
+.boot-press p { margin: 0; font-family: var(--display); font-size: 12px; letter-spacing: .08em; color: var(--paper); animation: blink 1s steps(1) infinite; }
+.boot-game { width: min(78vw, 360px); height: auto; animation: game-bob 1.6s steps(4) infinite alternate; }
+@keyframes game-bob { to { transform: translateY(-6px); } }
 .boot:not([data-step="press"]) .boot-press { display: none; }
+/* "un juego de Petsys" */
+.boot-petsys { display: grid; justify-items: center; gap: 22px; opacity: 0; transition: opacity .4s; pointer-events: none; }
+.boot-petsys small { font-family: var(--display); font-size: 9px; letter-spacing: .22em; color: #9a9ab0; }
+.boot-petsys img { width: min(64vw, 290px); height: auto; }
+.boot[data-step="petsys"] .boot-petsys { opacity: 1; }
+.boot[data-step="petsys"] .boot-petsys img { animation: petsys-in .7s steps(7) both; }
+@keyframes petsys-in { from { transform: scale(.6); filter: blur(6px); opacity: 0; } }
 
 .boot-white { position: fixed; inset: 0; background: #fff; display: grid; place-items: center; opacity: 0; transition: opacity .35s; pointer-events: none; }
 .boot[data-step="white"] .boot-white { opacity: 1; }

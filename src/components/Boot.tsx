@@ -1,21 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import isoSvg from '../assets/onnix-isologo.svg?raw'
 import logoSvg from '../assets/onnix-logo.svg?raw'
-import { bootChime, stopBootChime, unlockAudio } from '../game/audio'
+import juegoUrl from '../assets/logo-juego.webp'
+import petsysUrl from '../assets/petsys-logo.svg'
+import { bootChime, petsysJingle, stopBootChime, unlockAudio } from '../game/audio'
 
 // Los tres arcos del isologo por separado, para que entren volando y se armen.
 const ARCS = (isoSvg.match(/ d="([^"]+)"/)?.[1] ?? '').split(/(?=M)/)
 // Logo completo en blanco, para dibujarlo chiquito y agrandarlo pixelado.
 const LOGO_URL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(logoSvg.replace('<path ', '<path fill="#fff" '))
 
-type Step = 'press' | 'white' | 'black' | 'out'
-
-/** Momentos de la intro en ms desde el toque. El sonido (bootChime) sigue los mismos tiempos. */
-const AT = { black: 2900, out: 5600, done: 6200 }
+type Step = 'press' | 'petsys' | 'white' | 'black' | 'out'
 
 /**
- * Arranque estilo consola de los 90: "tocá para empezar" (habilita el audio),
- * pantalla blanca con el isologo que se arma y pantalla negra con el logo flotando en baja resolución.
+ * Momentos de la intro en ms desde el toque. La parte de ONNIX arranca en `white`
+ * y su sonido (bootChime) sigue los tiempos contando desde ahí.
+ */
+const AT = { white: 2600, black: 2600 + 2900, out: 2600 + 5600, done: 2600 + 6200 }
+
+/**
+ * Arranque estilo consola de los 90: logo del juego y "tocá para empezar" (habilita el audio),
+ * "un juego de Petsys", y después ONNIX: pantalla blanca con el isologo que se arma
+ * y pantalla negra con el logo flotando en baja resolución.
  * Tocar en cualquier momento después del primer toque la saltea.
  */
 export function Boot({ onDone }: { onDone: () => void }) {
@@ -39,9 +45,13 @@ export function Boot({ onDone }: { onDone: () => void }) {
 
   const start = () => {
     unlockAudio()
-    bootChime()
-    setStep('white')
+    petsysJingle()
+    setStep('petsys')
     const at = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms))
+    at(AT.white, () => {
+      bootChime()
+      setStep('white')
+    })
     at(AT.black, () => setStep('black'))
     at(AT.out, () => setStep('out'))
     at(AT.done, onDone)
@@ -68,7 +78,14 @@ export function Boot({ onDone }: { onDone: () => void }) {
         }
       }}
     >
-      <p className="boot-press">TOCÁ PARA EMPEZAR</p>
+      <div className="boot-press">
+        <img className="boot-game" src={juegoUrl} alt="¡Siguiente Paciente!" />
+        <p>TOCÁ PARA EMPEZAR</p>
+      </div>
+      <div className="boot-petsys" aria-hidden="true">
+        <small>UN JUEGO DE</small>
+        <img src={petsysUrl} alt="" />
+      </div>
       <div className="boot-white" aria-hidden="true">
         <svg className="boot-iso" viewBox="0 0 107 107">
           {ARCS.map((d, i) => (
